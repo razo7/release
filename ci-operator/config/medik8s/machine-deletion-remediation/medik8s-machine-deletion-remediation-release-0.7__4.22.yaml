@@ -1,10 +1,14 @@
 base_images:
+  claude-ai-helpers:
+    name: claude-ai-helpers
+    namespace: ci
+    tag: latest
   operator-base:
     name: ubi
     namespace: ocp
-    tag: "9"
+    tag: '9'
   operator-sdk:
-    name: "4.17"
+    name: '4.17'
     namespace: origin
     tag: operator-sdk
 binary_build_commands: make manager
@@ -28,7 +32,7 @@ releases:
     candidate:
       product: ocp
       stream: ci
-      version: "4.22"
+      version: '4.22'
 resources:
   '*':
     limits:
@@ -49,18 +53,25 @@ tests:
     env:
       BASE_DOMAIN: ocp-ci.medik8s-ci.devcluster.openshift.com
       INSTALL_NAMESPACE: mdr-install
+      TEST_STEPS: e2e-test
     test:
     - as: e2e-install
       cli: latest
-      commands: |
-        oc create namespace "$INSTALL_NAMESPACE"
+      commands: 'oc create namespace "$INSTALL_NAMESPACE"
+
 
         # workaround for OLM pod not running with restricted PSA
+
         oc label --overwrite ns "$INSTALL_NAMESPACE" security.openshift.io/scc.podSecurityLabelSync=false
+
         oc label --overwrite ns "$INSTALL_NAMESPACE" pod-security.kubernetes.io/enforce=privileged
 
+
         operator-sdk run bundle -n "$INSTALL_NAMESPACE" "$OO_BUNDLE"
+
         oc wait --for condition=Available -n "$INSTALL_NAMESPACE" deployment machine-deletion-remediation-controller-manager
+
+        '
       dependencies:
       - env: OO_BUNDLE
         name: machine-deletion-remediation-bundle
@@ -81,8 +92,10 @@ tests:
           cpu: 100m
           memory: 200Mi
     workflow: ipi-aws
+    post:
+    - ref: medik8s-analyze-e2e-failure
 zz_generated_metadata:
   branch: release-0.7
   org: medik8s
   repo: machine-deletion-remediation
-  variant: "4.22"
+  variant: '4.22'

@@ -1,4 +1,8 @@
 base_images:
+  claude-ai-helpers:
+    name: claude-ai-helpers
+    namespace: ci
+    tag: latest
   os:
     name: centos
     namespace: openshift
@@ -24,7 +28,7 @@ releases:
     candidate:
       product: ocp
       stream: ci
-      version: "5.0"
+      version: '5.0'
 resources:
   '*':
     requests:
@@ -44,18 +48,26 @@ tests:
       BASE_DOMAIN: ocp-ci.medik8s-ci.devcluster.openshift.com
       OPERATOR_NAMESPACE: far-install
       OPERATOR_RELEASED_VERSION: 0.7.0
+      TEST_STEPS: test-command
     test:
     - as: install-last-operator-version
       cli: latest
-      commands: |
-        make create-ns
+      commands: 'make create-ns
+
 
         # workaround for OLM pod not running with restricted PSA
+
         oc label --overwrite ns "$OPERATOR_NAMESPACE" security.openshift.io/scc.podSecurityLabelSync=false
+
         oc label --overwrite ns "$OPERATOR_NAMESPACE" pod-security.kubernetes.io/enforce=privileged
 
+
         # OPERATOR_NAMESPACE variable is used by bundle-run and bundle-run-update
-        BUNDLE_IMG=quay.io/medik8s/fence-agents-remediation-operator-bundle:v"$OPERATOR_RELEASED_VERSION" make bundle-run
+
+        BUNDLE_IMG=quay.io/medik8s/fence-agents-remediation-operator-bundle:v"$OPERATOR_RELEASED_VERSION"
+        make bundle-run
+
+        '
       env:
       - name: OPERATOR_NAMESPACE
       - name: OPERATOR_RELEASED_VERSION
@@ -89,8 +101,10 @@ tests:
           cpu: 100m
           memory: 200Mi
     workflow: ipi-aws
+    post:
+    - ref: medik8s-analyze-e2e-failure
 zz_generated_metadata:
   branch: release-0.8
   org: medik8s
   repo: fence-agents-remediation
-  variant: "5.0"
+  variant: '5.0'

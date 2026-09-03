@@ -1,6 +1,10 @@
 base_images:
+  claude-ai-helpers:
+    name: claude-ai-helpers
+    namespace: ci
+    tag: latest
   base:
-    name: "4.23"
+    name: '4.23'
     namespace: ocp
     tag: base
 binary_build_commands: make build
@@ -24,7 +28,7 @@ releases:
     candidate:
       product: ocp
       stream: ci
-      version: "4.23"
+      version: '4.23'
 resources:
   '*':
     requests:
@@ -44,18 +48,26 @@ tests:
       BASE_DOMAIN: ocp-ci.medik8s-ci.devcluster.openshift.com
       OPERATOR_NAMESPACE: nmo-install
       OPERATOR_RELEASED_VERSION: 0.20.0
+      TEST_STEPS: test-command
     test:
     - as: install-last-operator-version
       cli: latest
-      commands: |
-        oc create namespace "$OPERATOR_NAMESPACE"
+      commands: 'oc create namespace "$OPERATOR_NAMESPACE"
+
 
         # workaround for OLM pod not running with restricted PSA
+
         oc label --overwrite ns "$OPERATOR_NAMESPACE" security.openshift.io/scc.podSecurityLabelSync=false
+
         oc label --overwrite ns "$OPERATOR_NAMESPACE" pod-security.kubernetes.io/enforce=privileged
 
+
         # OPERATOR_NAMESPACE variable is used by bundle-run and bundle-run-update
-        BUNDLE_IMG=quay.io/medik8s/node-maintenance-operator-bundle:v"$OPERATOR_RELEASED_VERSION" make bundle-run
+
+        BUNDLE_IMG=quay.io/medik8s/node-maintenance-operator-bundle:v"$OPERATOR_RELEASED_VERSION"
+        make bundle-run
+
+        '
       env:
       - name: OPERATOR_NAMESPACE
       - name: OPERATOR_RELEASED_VERSION
@@ -88,8 +100,10 @@ tests:
           cpu: 100m
           memory: 200Mi
     workflow: ipi-aws
+    post:
+    - ref: medik8s-analyze-e2e-failure
 zz_generated_metadata:
   branch: release-0.21
   org: medik8s
   repo: node-maintenance-operator
-  variant: "4.23"
+  variant: '4.23'
